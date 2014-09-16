@@ -1,4 +1,4 @@
-obj-m := readwrite.o
+obj-m := processinfo.o
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
 

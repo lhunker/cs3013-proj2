@@ -1,6 +1,9 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/syscalls.h>
+//#include <linux/asm-generic/current.h>
+#include <linux/types.h>
+#include <linux/sched.h>
 #include "processinfo.h"
 
 unsigned long **sys_call_table;
@@ -8,8 +11,18 @@ unsigned long **sys_call_table;
 asmlinkage long (*ref_sys_cs3013_syscall2)(void);
 
 asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
-    printk(KERN_INFO "\"'Hello world?!' More like 'Goodbye, world!' EXTERMINATE!\" -- Dalek");
-
+    struct task_struct *task = current;
+    struct processinfo kinfo;
+    kinfo.uid = current_uid();  //get uid
+    kinfo.pid = task_pid_vnr(current); //get pid
+    kinfo.state = task->state;
+    kinfo.user_time =  cputime_to_usecs(task->utime);
+    kinfo.sys_time = cputime_to_usecs(task->stime);
+    kinfo.parent_pid = task->parent->pid;
+    kinfo.start_time = timespec_to_ns(&task->real_start_time);
+    printk(KERN_INFO "Testing state"  );
+    if (copy_to_user(info, &kinfo, sizeof kinfo))
+      return EFAULT;
     return 0;
 }
 
