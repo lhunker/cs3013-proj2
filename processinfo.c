@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/syscalls.h>
 //#include <linux/asm-generic/current.h>
+#include <linux/list.h>
 #include <linux/types.h>
 #include <linux/sched.h>
 #include "processinfo.h"
@@ -13,6 +14,11 @@ asmlinkage long (*ref_sys_cs3013_syscall2)(void);
 asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
     struct task_struct *task = current;
     struct processinfo kinfo;
+    struct list_head * pos;
+    long long cutime = 0, cstime = 0;
+    pid_t youngest_child = -1, old_sibling = -1 , young_sibling = -1;
+    long long yChildStart = -1, oSibStart = -1, ySibStart = -1;
+
     kinfo.uid = current_uid();  //get uid
     kinfo.pid = task_pid_vnr(current); //get pid
     kinfo.state = task->state;
@@ -20,7 +26,38 @@ asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
     kinfo.sys_time = cputime_to_usecs(task->stime);
     kinfo.parent_pid = task->parent->pid;
     kinfo.start_time = timespec_to_ns(&task->real_start_time);
-    printk(KERN_INFO "Testing state"  );
+
+    //ITERATE LIST
+    list_for_each(pos, &(task->children)){
+      struct task_struct curr = *list_entry(pos, struct task_struct, children);
+      cutime += cputime_to_usecs(curr.utime);
+      cstime += cputime_to_usecs(curr.stime);
+      if (yChildStart == -1 || timespec_to_ns(&curr.real_start_time) > yChildStart){
+        youngest_child = curr.pid;
+        yChildStart = timespec_to_ns(&curr.real_start_time);
+      } 
+    }
+
+    list_for_each(pos, &(task->sibling)){
+      struct task_struct curr = *list_entry(pos, struct task_struct, sibling);
+      long long myStart = timespec_to_ns(&curr.real_start_time);
+      printk(KERN_INFO "My start time is %lld", myStart);
+      if (myStart > kinfo.start_time && (ySibStart == -1 || myStart - kinfo.start_time < ySibStart)){
+        young_sibling = curr.pid;
+        ySibStart = myStart- kinfo.start_time;
+      } 
+      if (myStart < kinfo.start_time && (oSibStart == -1 || kinfo.start_time - myStart < oSibStart)){
+        old_sibling = curr.pid;
+        oSibStart = kinfo.start_time - myStart;
+      } 
+    }
+
+    kinfo.cutime = cutime;
+    kinfo.cstime = cstime;
+    kinfo.youngest_child = youngest_child;
+    kinfo.younger_sibling = young_sibling;
+    kinfo.older_sibling = old_sibling;
+
     if (copy_to_user(info, &kinfo, sizeof kinfo))
       return EFAULT;
     return 0;
