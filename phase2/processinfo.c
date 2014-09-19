@@ -1,3 +1,9 @@
+/*
+Lukas Hunker
+processinfo.c
+A LKM to override cs3013 syscall2
+Syscall returns statistics about current task
+*/
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/syscalls.h>
@@ -29,9 +35,10 @@ asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
 
     //ITERATE LIST
     list_for_each(pos, &(task->children)){
-      struct task_struct curr = *list_entry(pos, struct task_struct, children);
+      struct task_struct curr = *list_entry(pos, struct task_struct, sibling);
       cutime += cputime_to_usecs(curr.utime);
       cstime += cputime_to_usecs(curr.stime);
+      printk(KERN_INFO "YC pid %d", (int)curr.pid);
       if (yChildStart == -1 || timespec_to_ns(&curr.real_start_time) > yChildStart){
         youngest_child = curr.pid;
         yChildStart = timespec_to_ns(&curr.real_start_time);
@@ -57,7 +64,9 @@ asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
     kinfo.youngest_child = youngest_child;
     kinfo.younger_sibling = young_sibling;
     kinfo.older_sibling = old_sibling;
-
+    if(info == NULL){
+      return -1;
+    }
     if (copy_to_user(info, &kinfo, sizeof kinfo))
       return EFAULT;
     return 0;

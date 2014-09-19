@@ -1,0 +1,69 @@
+A test passing in Null instead of info
+lhunker@ld-dev:~/proj2$ ./testp2
+The return values of the system calls are:
+	cs3013_syscall1: 0
+	cs3013_syscall2: -1
+	cs3013_syscall3: 0
+
+Test with two children, no siblings
+lhunker@ld-dev:~/proj2/phase2$ ./testp2
+The return values of the system calls are:
+	cs3013_syscall1: 0
+		UID is 1000
+		PID is 6769
+		Parent PID is 2637
+		Yougest Child PID is 6771
+		Younger Sibling PID is -1
+		Older Sibling PID is 0
+		State is 0
+		Start time is 4822438253044
+		Sys time is 4000
+		User time is 0
+		Child User time is 1984000
+		Child system time is 0
+	cs3013_syscall2: 0
+	cs3013_syscall3: 0
+
+
+Test with older and younger siblings
+lhunker@ld-dev:~/proj2$ sleep 2 &  ./testp2 &  sleep 2 &
+[1] 5631
+[2] 5632
+[3] 5633
+The return values of the system calls are:
+	cs3013_syscall1: 0
+		UID is 1000
+		PID is 5632
+		Parent PID is 2637
+		Yougest Child PID is 5635
+		Younger Sibling PID is 5633
+		Older Sibling PID is 5631
+		State is 0
+		Start time is 3391088808331
+		Sys time is 4000
+		User time is 0
+		Child User time is 0
+		Child system time is 0
+	cs3013_syscall2: 0
+	cs3013_syscall3: 0
+
+Test with no children or siblings
+lhunker@ld-dev:~/proj2$ ./testp2
+The return values of the system calls are:
+	cs3013_syscall1: 0
+		UID is 1000
+		PID is 5695
+		Parent PID is 2637
+		Yougest Child PID is -1
+		Younger Sibling PID is -1
+		Older Sibling PID is 0
+		State is 0
+		Start time is 3537701280519
+		Sys time is 0
+		User time is 0
+		Child User time is 0
+		Child system time is 0
+	cs3013_syscall2: 0
+	cs3013_syscall3: 0
+
+

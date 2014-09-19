@@ -3,6 +3,14 @@
 	{
 		"selected_items":
 		[
+			[
+				"ol",
+				"old_sibling"
+			],
+			[
+				"young",
+				"youngest_child"
+			]
 		]
 	},
 	"buffers":
@@ -16,15 +24,32 @@
 			}
 		},
 		{
-			"file": "readwrite.c",
+			"contents": "#include <linux/kernel.h>\n#include <linux/module.h>\n#include <linux/syscalls.h>\n//#include <linux/asm-generic/current.h>\n#include <linux/list.h>\n#include <linux/types.h>\n#include <linux/sched.h>\n#include \"processinfo.h\"\n\nunsigned long **sys_call_table;\n\nasmlinkage long (*ref_sys_cs3013_syscall2)(void);\n\nasmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {\n    struct task_struct *task = current;\n    struct processinfo kinfo;\n    struct list_head * pos;\n    long long cutime = 0, cstime = 0;\n    pid_t youngest_child = -1, old_sibling = -1 , young_sibling = -1;\n    long long yChildStart = -1, oSibStart = -1, ySibStart = -1;\n\n    kinfo.uid = current_uid();  //get uid\n    kinfo.pid = task_pid_vnr(current); //get pid\n    kinfo.state = task->state;\n    kinfo.user_time =  cputime_to_usecs(task->utime);\n    kinfo.sys_time = cputime_to_usecs(task->stime);\n    kinfo.parent_pid = task->parent->pid;\n    kinfo.start_time = timespec_to_ns(&task->real_start_time);\n\n    //ITERATE LIST\n    list_for_each(pos, &(task->children)){\n      struct task_struct curr = *list_entry(pos, struct task_struct, sibling);\n      cutime += cputime_to_usecs(curr.utime);\n      cstime += cputime_to_usecs(curr.stime);\n      printk(KERN_INFO \"YC pid %d\", (int)curr.pid);\n      if (yChildStart == -1 || timespec_to_ns(&curr.real_start_time) > yChildStart){\n        youngest_child = curr.pid;\n        yChildStart = timespec_to_ns(&curr.real_start_time);\n      } \n    }\n\n    list_for_each(pos, &(task->sibling)){\n      struct task_struct curr = *list_entry(pos, struct task_struct, sibling);\n      long long myStart = timespec_to_ns(&curr.real_start_time);\n      printk(KERN_INFO \"My start time is %lld\", myStart);\n      if (myStart > kinfo.start_time && (ySibStart == -1 || myStart - kinfo.start_time < ySibStart)){\n        young_sibling = curr.pid;\n        ySibStart = myStart- kinfo.start_time;\n      } \n      if (myStart < kinfo.start_time && (oSibStart == -1 || kinfo.start_time - myStart < oSibStart)){\n        old_sibling = curr.pid;\n        oSibStart = kinfo.start_time - myStart;\n      } \n    }\n\n    kinfo.cutime = cutime;\n    kinfo.cstime = cstime;\n    kinfo.youngest_child = youngest_child;\n    kinfo.younger_sibling = young_sibling;\n    kinfo.older_sibling = old_sibling;\n    if(info == NULL){\n      return -1;\n    }\n    if (copy_to_user(info, &kinfo, sizeof kinfo))\n      return EFAULT;\n    return 0;\n}\n\nstatic unsigned long **find_sys_call_table(void) {\n  unsigned long int offset = PAGE_OFFSET;\n  unsigned long **sct;\n  \n  while (offset < ULLONG_MAX) {\n    sct = (unsigned long **)offset;\n\n    if (sct[__NR_close] == (unsigned long *) sys_close) {\n      printk(KERN_INFO \"Interceptor: Found syscall table at address: 0x%02lX\",\n                (unsigned long) sct);\n      return sct;\n    }\n    \n    offset += sizeof(void *);\n  }\n  \n  return NULL;\n}\n\nstatic void disable_page_protection(void) {\n  /*\n    Control Register 0 (cr0) governs how the CPU operates.\n\n    Bit #16, if set, prevents the CPU from writing to memory marked as\n    read only. Well, our system call table meets that description.\n    But, we can simply turn off this bit in cr0 to allow us to make\n    changes. We read in the current value of the register (32 or 64\n    bits wide), and AND that with a value where all bits are 0 except\n    the 16th bit (using a negation operation), causing the write_cr0\n    value to have the 16th bit cleared (with all other bits staying\n    the same. We will thus be able to write to the protected memory.\n\n    It's good to be the kernel!\n   */\n  write_cr0 (read_cr0 () & (~ 0x10000));\n}\n\nstatic void enable_page_protection(void) {\n  /*\n   See the above description for cr0. Here, we use an OR to set the \n   16th bit to re-enable write protection on the CPU.\n  */\n  write_cr0 (read_cr0 () | 0x10000);\n}\n\nstatic int __init interceptor_start(void) {\n  /* Find the system call table */\n  if(!(sys_call_table = find_sys_call_table())) {\n    /* Well, that didn't work. \n       Cancel the module loading step. */\n    return -1;\n  }\n  \n  /* Store a copy of all the existing functions */\n  ref_sys_cs3013_syscall2 = (void *)sys_call_table[__NR_cs3013_syscall2];\n\n  /* Replace the existing system calls */\n  disable_page_protection();\n\n  sys_call_table[__NR_cs3013_syscall2] = (unsigned long *)new_sys_cs3013_syscall2;\n  \n  enable_page_protection();\n  \n  /* And indicate the load was successful */\n  printk(KERN_INFO \"Loaded interceptor!\");\n\n  return 0;\n}\n\nstatic void __exit interceptor_end(void) {\n  /* If we don't know what the syscall table is, don't bother. */\n  if(!sys_call_table)\n    return;\n  \n  /* Revert all system calls to what they were before we began. */\n  disable_page_protection();\n  sys_call_table[__NR_cs3013_syscall2] = (unsigned long *)ref_sys_cs3013_syscall2;\n  enable_page_protection();\n\n  printk(KERN_INFO \"Unloaded interceptor!\");\n}\n\nMODULE_LICENSE(\"GPL\");\nmodule_init(interceptor_start);\nmodule_exit(interceptor_end);\n",
+			"file": "processinfo.c",
+			"file_size": -1,
+			"file_write_time": -1,
 			"settings":
 			{
-				"buffer_size": 2844,
+				"buffer_size": 4942,
 				"line_ending": "Unix"
 			}
 		},
 		{
+			"contents": "struct processinfo {\n	long state; // current state of process\n	pid_t pid; // process ID of this process\n	pid_t parent_pid; // process ID of parent\n	pid_t youngest_child; // process ID of youngest child\n	pid_t younger_sibling; // pid of next younger sibling\n	pid_t older_sibling; // pid of next older sibling\n	uid_t uid; // user ID of process owner\n	long long start_time; // process start time in\n						  // nanoseconds since boot time\n	long long user_time; // CPU time in user mode (microseconds)\n	long long sys_time; // CPU time in system mode (microseconds)\n	long long cutime; // user time of children (microseconds)\n	long long cstime; // system time of children (microseconds)\n}; // struct processinfo\n",
+			"file": "processinfo.h",
+			"file_size": -1,
+			"file_write_time": -1,
+			"settings":
+			{
+				"buffer_size": 705,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "obj-m := readwrite.o\nKDIR := /lib/modules/$(shell uname -r)/build\nPWD := $(shell pwd)\n\nall:\n	$(MAKE) -C $(KDIR) M=$(PWD) modules\n\nclean:\n	$(MAKE) -C $(KDIR) M=$(PWD) clean\n",
 			"file": "Makefile",
+			"file_size": -1,
+			"file_write_time": -1,
 			"settings":
 			{
 				"buffer_size": 172,
@@ -32,10 +57,37 @@
 			}
 		},
 		{
+			"contents": "//Lukas Hunker\n#include <sys/syscall.h>\n#include <stdio.h>\n#include <unistd.h>\n#include <sys/types.h>\n#include <sys/wait.h>\n#include \"processinfo.h\"\n\n// These values MUST match the unistd_32.h modifications:\n#define __NR_cs3013_syscall1 349\n#define __NR_cs3013_syscall2 350\n#define __NR_cs3013_syscall3 351\n\nlong testCall1 ( void) {\n        return (long) syscall(__NR_cs3013_syscall1);\n}\nlong testCall2 ( void) {\n		struct processinfo info;\n        long ret =  (long) syscall(__NR_cs3013_syscall2, &info);\n        if (ret == -1){\n        	return ret;\n        }\n        printf(\"\\t\\tUID is %d\\n\", info.uid);\n        printf(\"\\t\\tPID is %d\\n\", info.pid);\n        printf(\"\\t\\tParent PID is %d\\n\", info.parent_pid);\n        printf(\"\\t\\tYougest Child PID is %d\\n\", info.youngest_child);\n        printf(\"\\t\\tYounger Sibling PID is %d\\n\", info.younger_sibling);\n        printf(\"\\t\\tOlder Sibling PID is %d\\n\", info.older_sibling);\n        printf(\"\\t\\tState is %ld\\n\", info.state);\n        printf(\"\\t\\tStart time is %lld\\n\", info.start_time);\n        printf(\"\\t\\tSys time is %lld\\n\", info.sys_time);\n        printf(\"\\t\\tUser time is %lld\\n\", info.user_time);\n        printf(\"\\t\\tChild User time is %lld\\n\", info.cutime);\n        printf(\"\\t\\tChild system time is %lld\\n\", info.cstime);\n        return ret;\n}\nlong testCall3 ( void) {\n        return (long) syscall(__NR_cs3013_syscall3);\n}\nvoid stress (void) {\n	//Set a child process to generate usage\n	long long i, j;\n	for(i = 0; i < 1000000000; i++){\n		j++;\n	}\n	printf(\"done\");\n	sleep(4);\n}\n\nint main () {\n		// int pid = fork();\n		// if (pid == 0){\n		// 	stress();\n		// 	return 0;\n		// }\n		// pid = fork();\n		// if (pid == 0){\n		// 	stress();\n		// 	return 0;\n		// }\n        printf(\"The return values of the system calls are:\\n\");\n        printf(\"\\tcs3013_syscall1: %ld\\n\", testCall1());\n        printf(\"\\tcs3013_syscall2: %ld\\n\", testCall2());\n        printf(\"\\tcs3013_syscall3: %ld\\n\", testCall3());\n        wait(0);\n        return 0;\n}\n",
 			"file": "proj2test.c",
+			"file_size": -1,
+			"file_write_time": -1,
 			"settings":
 			{
-				"buffer_size": 727,
+				"buffer_size": 1976,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "tests.txt",
+			"settings":
+			{
+				"buffer_size": 1515,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/lhunker/taskstruct",
+			"settings":
+			{
+				"buffer_size": 10346,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/usr/src/linux/include/linux/list.h",
+			"settings":
+			{
+				"buffer_size": 21209,
 				"line_ending": "Unix"
 			}
 		}
@@ -71,6 +123,14 @@
 	],
 	"file_history":
 	[
+		"/home/lhunker/proj2/readwrite.c",
+		"/home/lhunker/proj2/syslogexcerpt",
+		"/usr/src/linux/include/asm-generic/cputime.h",
+		"/usr/src/linux/include/linux/jiffies.h",
+		"/usr/src/linux/include/linux/time.h",
+		"/usr/src/linux/include/asm-generic/current.h",
+		"/usr/src/linux/kernel/timer.c",
+		"/usr/src/linux/include/linux/sched.h",
 		"/home/lhunker/proj2/Makefile",
 		"/home/lhunker/cs3013/proj2test.c",
 		"/home/lhunker/cs3013/syslog",
@@ -81,7 +141,7 @@
 	],
 	"find":
 	{
-		"height": 0.0
+		"height": 26.0
 	},
 	"find_in_files":
 	{
@@ -95,6 +155,25 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"list_empty",
+			"list_for_each",
+			"child",
+			"parent",
+			"cputime_t",
+			"cputtime_t",
+			"jiffies_to_usecs",
+			"time",
+			"pid",
+			"state",
+			"\" ",
+			"pid",
+			"uid",
+			"current_uid",
+			"uid",
+			"pid",
+			"struct task_struct {",
+			"task_struct",
+			"syscall1"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -112,7 +191,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 0,
 			"sheets":
 			[
 				{
@@ -128,8 +207,8 @@
 						"selection":
 						[
 							[
-								736,
-								736
+								2892,
+								2892
 							]
 						],
 						"settings":
@@ -142,24 +221,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "readwrite.c",
+					"file": "processinfo.c",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2844,
+						"buffer_size": 4942,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								493,
-								493
+								2311,
+								2311
 							]
 						],
 						"settings":
@@ -169,14 +248,42 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 324.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
+					"file": "processinfo.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 705,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								705,
+								705
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
 					"file": "Makefile",
 					"semi_transient": false,
 					"settings":
@@ -200,24 +307,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 4,
 					"file": "proj2test.c",
-					"semi_transient": true,
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 727,
+						"buffer_size": 1976,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								1703,
+								1703
 							]
 						],
 						"settings":
@@ -225,10 +332,96 @@
 							"syntax": "Packages/C++/C++.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 373.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "tests.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1515,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1071,
+								1071
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 648.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/home/lhunker/taskstruct",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 10346,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3869,
+								3869
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1073.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "/usr/src/linux/include/linux/list.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 21209,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4522,
+								4522
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2909.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
 					"type": "text"
 				}
 			]
@@ -236,7 +429,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 0.0
+		"height": 26.0
 	},
 	"input":
 	{
@@ -276,7 +469,7 @@
 	"project": "proj2.sublime-project",
 	"replace":
 	{
-		"height": 0.0
+		"height": 48.0
 	},
 	"save_all_on_build": true,
 	"select_file":

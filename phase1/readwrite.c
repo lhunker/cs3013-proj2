@@ -1,3 +1,9 @@
+/*
+Lukas Hunker
+readwrite.c
+A LKM to intercept open and close calls and print information to the syslog
+*/
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/syscalls.h>

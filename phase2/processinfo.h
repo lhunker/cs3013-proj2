@@ -1,3 +1,9 @@
+/*
+Lukas Hunker
+processinfo.h
+holds the process info struct that information is put in
+*/
+
 struct processinfo {
 	long state; // current state of process
 	pid_t pid; // process ID of this process

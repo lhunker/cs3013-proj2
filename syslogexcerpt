@@ -1,0 +1,45 @@
+Sep 18 22:18:17 ld-dev kernel: [ 3743.818879] Loaded interceptor!
+Sep 18 22:18:17 ld-dev kernel: [ 3750.961910] User 1000 is closing file descriptor: 3
+Sep 18 22:18:17 ld-dev kernel: [ 3750.961918] User 1000 is closing file descriptor: 4
+Sep 18 22:18:17 ld-dev kernel: [ 3750.961926] User 1000 is closing file descriptor: 4
+Sep 18 22:18:17 ld-dev kernel: [ 3750.961937] User 1000 is closing file descriptor: 3
+Sep 18 22:18:17 ld-dev kernel: [ 3750.962726] User 1000 is opening file /etc/ld.so.cache
+Sep 18 22:18:17 ld-dev kernel: [ 3750.962746] User 1000 is closing file descriptor: 3
+Sep 18 22:18:17 ld-dev kernel: [ 3750.962789] User 1000 is opening file /lib/i386-linux-gnu/libc.so.6
+Sep 18 22:18:17 ld-dev kernel: [ 3750.962873] User 1000 is closing file descriptor: 3
+Sep 18 22:18:17 ld-dev kernel: [ 3750.963477] User 1000 is opening file /usr/lib/locale/locale-archive
+Sep 18 22:18:17 ld-dev kernel: [ 3750.963535] User 1000 is closing file descriptor: 3
+Sep 18 22:18:17 ld-dev kernel: [ 3750.963608] User 1000 is opening file /etc/motd
+Sep 18 22:18:17 ld-dev kernel: [ 3750.963972] User 1000 is closing file descriptor: 3
+Sep 18 22:18:17 ld-dev kernel: [ 3750.964028] User 1000 is closing file descriptor: 1
+Sep 18 22:18:28 ld-dev kernel: [ 3750.964033] User 1000 is closing file descriptor: 2
+Sep 18 22:18:28 ld-dev kernel: [ 3761.940659] User 1000 is closing file descriptor: 4
+Sep 18 22:18:28 ld-dev kernel: [ 3761.940672] User 1000 is closing file descriptor: 3
+Sep 18 22:18:28 ld-dev kernel: [ 3761.940676] User 1000 is closing file descriptor: 4
+Sep 18 22:18:28 ld-dev kernel: [ 3761.940712] User 1000 is closing file descriptor: 3
+Sep 18 22:18:28 ld-dev kernel: [ 3761.941215] User 1000 is opening file /etc/ld.so.cache
+Sep 18 22:18:28 ld-dev kernel: [ 3761.941228] User 1000 is closing file descriptor: 3
+Sep 18 22:18:28 ld-dev kernel: [ 3761.941251] User 1000 is opening file /lib/i386-linux-gnu/libc.so.6
+Sep 18 22:18:28 ld-dev kernel: [ 3761.941297] User 1000 is closing file descriptor: 3
+Sep 18 22:18:28 ld-dev kernel: [ 3761.941623] ‘Hello, world!’ -- syscall1
+Sep 18 22:18:28 ld-dev kernel: [ 3761.941655] My start time is 80297494064
+Sep 18 22:18:28 ld-dev kernel: [ 3761.941696] ‘Hello, world!’ -- syscall3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.305152] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.305160] User 1000 is closing file descriptor: 4
+Sep 18 22:18:38 ld-dev kernel: [ 3772.305165] User 1000 is closing file descriptor: 4
+Sep 18 22:18:38 ld-dev kernel: [ 3772.305190] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334638] User 1000 is opening file /etc/ld.so.cache
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334669] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334717] User 1000 is opening file /lib/i386-linux-gnu/libm.so.6
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334795] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334823] User 1000 is opening file /lib/i386-linux-gnu/libtinfo.so.5
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334881] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334902] User 1000 is opening file /lib/i386-linux-gnu/libselinux.so.1
+Sep 18 22:18:38 ld-dev kernel: [ 3772.334970] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.335013] User 1000 is opening file /lib/i386-linux-gnu/libacl.so.1
+Sep 18 22:18:38 ld-dev kernel: [ 3772.335135] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.335160] User 1000 is opening file /usr/lib/i386-linux-gnu/libgpm.so.2
+Sep 18 22:18:38 ld-dev kernel: [ 3772.351246] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.351288] User 1000 is opening file /lib/i386-linux-gnu/libdl.so.2
+Sep 18 22:18:38 ld-dev kernel: [ 3772.351396] User 1000 is closing file descriptor: 3
+Sep 18 22:18:38 ld-dev kernel: [ 3772.351418] User 1000 is opening file /usr/lib/libpython2.7.so.1.0
